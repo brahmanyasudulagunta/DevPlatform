@@ -1,34 +1,49 @@
 pipeline {
   agent any
 
+  environment {
+    KUBECONFIG = "${HOME}/.kube/config"
+  }
+
   stages {
+
     stage('Checkout') {
       steps {
         checkout scm
       }
     }
 
-    stage('Validate Kubernetes Manifests') {
+    stage('Validate YAML') {
       steps {
         sh '''
-          echo "Validating YAML files..."
+          echo "Running YAML lint..."
           find . -name "*.yaml" -exec yamllint {} +
         '''
       }
     }
 
-    stage('Policy Check') {
+    stage('Validate Kubernetes Access') {
       steps {
         sh '''
-          echo "Checking forbidden actions..."
-          ! grep -R "kubectl delete" .
+          echo "Checking cluster connectivity..."
+          kubectl get nodes
         '''
       }
     }
 
-    stage('Approval Gate') {
+    stage('Policy Guardrails') {
       steps {
-        input message: "Approve platform changes?"
+        sh '''
+          echo "Checking for forbidden operations..."
+          ! grep -R "kubectl delete" .
+          ! grep -R "helm uninstall" .
+        '''
+      }
+    }
+
+    stage('Manual Approval') {
+      steps {
+        input message: "Approve platform changes to be merged?"
       }
     }
   }
