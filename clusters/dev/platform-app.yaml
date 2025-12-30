@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/<your-username>/platform-engineering-lab.git
+    repoURL: https://github.com/Ashrith2727/DevPlatform.git
     targetRevision: main
     path: namespaces
   destination:
