@@ -9,4 +9,3 @@ rules:
     resources: ["pods", "services", "deployments"]
     verbs: ["get", "list", "create", "update", "delete"]
 
-# kubectl delete pod xyz
