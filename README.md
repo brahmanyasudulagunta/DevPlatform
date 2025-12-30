@@ -1,10 +1,7 @@
----
 
-```md
 # Self-Service Platform Engineering & SRE Lab  
 ## Architecture Overview (Cloud-Free)
 
----
 
 ## 1. Purpose
 
@@ -198,5 +195,3 @@ This platform demonstrates:
 
 It closely mirrors how modern internal platforms are built in large organizations.
 
----
-```
