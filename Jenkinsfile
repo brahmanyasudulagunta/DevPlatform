@@ -37,11 +37,13 @@ pipeline {
           echo "Checking for forbidden operations..."
         
           if grep -R "kubectl delete" .; then
+            --exclude=Jenkinsfile; then
             echo "ERROR: kubectl delete is not allowed in this repo"
             exit 1
           fi
 
           if grep -R "helm uninstall" .; then
+            --exclude=Jenkinsfile; then
             echo "ERROR: helm uninstall is not allowed in this repo"
             exit 1
           fi
