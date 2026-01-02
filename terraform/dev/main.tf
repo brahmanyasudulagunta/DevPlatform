@@ -21,7 +21,7 @@ module "dev_namespace" {
   name   = "develop"
 }
 
-module "test_namespace" {
-  source = "../modules/namespace"
-  name   = "test-jenkins"
-}
+# module "test_namespace" {
+#  source = "../modules/namespace"
+#  name   = "test-jenkins"
+# }
