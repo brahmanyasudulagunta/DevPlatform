@@ -58,10 +58,6 @@ pipeline {
     }
     
     stage('Terraform Apply (Dev)') {
-     
-      environment {
-        KUBECONFIG = "/var/lib/jenkins/.kube/config"
-      }
 
       steps {
         sh '''
