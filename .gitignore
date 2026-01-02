@@ -1,0 +1,31 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+crash.log
+crash.*.log
+
+# Secrets
+*.env
+*.secret
+*.key
+*.pem
+*.crt
+id_rsa
+id_rsa.pub
+
+# Kubernetes
+kubeconfig
+*.kubeconfig
+
+# Jenkins
+jenkins_home/
+*.log
+
+# OS / Editor
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/

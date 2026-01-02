@@ -56,6 +56,17 @@ pipeline {
         input message: "Approve platform changes to be merged?"
       }
     }
+    
+    stage('Terraform Apply (Dev)') {
+      steps {
+        sh '''
+          cd terraform/dev
+          terraform init
+          terraform apply -auto-approve
+       '''
+      }
+    }
+
   }
 }
 	
