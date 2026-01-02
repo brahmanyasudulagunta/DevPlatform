@@ -13,7 +13,7 @@ terraform {
 }
 
 provider "kubernetes" {
-   config_path = "/home/brahmanya/.kube/config"
+  config_path = "/home/brahmanya/.kube/config"
 }
 
 module "dev_namespace" {
