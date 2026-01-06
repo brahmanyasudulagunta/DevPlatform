@@ -57,7 +57,7 @@ pipeline {
       }
     }
     
-    stage('Terraform Apply (Dev)') {
+    stage('Terraform Apply (Develop)') {
 
       steps {
         sh '''
