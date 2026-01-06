@@ -16,7 +16,7 @@ provider "kubernetes" {
   config_path = "/home/brahmanya/.kube/config"
 }
 
-module "dev_namespace" {
+module "develop_namespace" {
   source = "../modules/namespace"
   name   = "develop"
 }

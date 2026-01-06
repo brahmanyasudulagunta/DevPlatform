@@ -64,7 +64,7 @@ pipeline {
           cd terraform/dev
           terraform init
            
-          terraform import module.dev_namespace.kubernetes_namespace.this dev || true
+          terraform import module.develop_namespace.kubernetes_namespace.this develop || true
           
           terraform apply -auto-approve
        '''
