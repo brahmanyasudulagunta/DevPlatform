@@ -61,7 +61,7 @@ pipeline {
 
       steps {
         sh '''
-          cd terraform/dev
+          cd terraform/develop
           terraform init
            
           terraform import module.develop_namespace.kubernetes_namespace.this develop || true
