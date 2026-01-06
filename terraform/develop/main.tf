@@ -8,7 +8,7 @@ terraform {
   }
 
   backend "local" {
-    path = "terraform-dev.tfstate"
+    path = "terraform-develop.tfstate"
   }
 }
 
