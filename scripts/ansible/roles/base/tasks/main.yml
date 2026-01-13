@@ -1,0 +1,11 @@
+---
+- name: Ensure basic packages are installed
+  become: true
+  apt:
+    name:
+      - curl
+      - git
+      - vim
+      - htop
+    state: present
+    update_cache: true

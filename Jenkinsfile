@@ -70,6 +70,15 @@ pipeline {
        '''
       }
     }
+    
+    stage('Ansible Configuration') {
+      steps {
+         sh '''
+           cd scripts/ansible
+           ansible-playbook -i inventory.ini site.yml
+            '''
+      }
+    }
 
   }
 }
