@@ -75,7 +75,20 @@ pipeline {
       steps {
          sh '''
            cd scripts/ansible
-           ansible-playbook -i inventory.ini site.yml
+           ansible-playbook -i inventory.ini site.yml \
+               --extra-vars "db_user=$DB_USER db_password=$DB_PASSWORD"
+            '''
+      }
+    }
+        
+     stage('Fetch Secrets from Vault') {
+       steps {
+          sh '''
+            export DB_USER=$(vault kv get -field=db_user platform/jenkins)
+            export DB_PASSWORD=$(vault kv get -field=db_password platform/jenkins)
+
+            echo "Secrets fetched successfully (values hidden)"
+             
             '''
       }
     }
