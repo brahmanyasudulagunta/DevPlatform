@@ -79,6 +79,17 @@ pipeline {
             '''
       }
     }
+    
+   stage('Debug User') {
+     steps {
+        sh '''
+          echo "WHOAMI:"
+          whoami
+          echo "ID:"
+          id
+           '''
+     } 
+   }
 
   }
 }
