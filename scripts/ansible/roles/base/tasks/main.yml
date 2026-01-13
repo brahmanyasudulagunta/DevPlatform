@@ -8,5 +8,6 @@
       - vim
       - htop
       - tree
+      - jq
     state: present
     update_cache: true
