@@ -3,30 +3,25 @@ set -euo pipefail
 
 REQUEST_DIR="clusters/dev/requests"
 
-[ -d "$REQUEST_DIR" ] || {
-  echo "No request directory. Skipping."
+if [ ! -d "$REQUEST_DIR" ]; then
+  echo "No request directory found at $REQUEST_DIR. Skipping."
   exit 0
-}
+fi
 
-shopt -s nullglob
-FILES=("$REQUEST_DIR"/*.yaml)
-shopt -u nullglob
+echo "Processing namespace requests in $REQUEST_DIR"
 
-[ ${#FILES[@]} -gt 0 ] || {
-  echo "No namespace requests found."
-  exit 0
-}
+for file in "$REQUEST_DIR"/*.yaml; do
+  [ -e "$file" ] || { echo "No request files found."; exit 0; }
 
-for file in "${FILES[@]}"; do
-  NAME=$(grep '^  name:' "$file" | awk '{print $2}')
-  ENV=$(grep '^  environment:' "$file" | awk '{print $2}')
+  NAME=$(yq '.metadata.name' "$file")
+  ENV=$(yq '.spec.environment' "$file")
 
-  [ -n "$NAME" ] && [ -n "$ENV" ] || {
-    echo "Invalid request: $file"
-    exit 1
-  }
+  echo "Request detected:"
+  echo "  Namespace: $NAME"
+  echo "  Environment: $ENV"
 
-  echo "Provisioning namespace '$NAME' in '$ENV'"
-
-  (cd "terraform/$ENV" && terraform init && terraform apply -auto-approve -var="name=$NAME")
+  cd "terraform/$ENV"
+  terraform init -input=false
+  terraform apply -auto-approve -var="name=$NAME"
+  cd -
 done
