@@ -3,6 +3,7 @@ pipeline {
 
   environment {
     KUBECONFIG = "${HOME}/.kube/config"
+    VAULT_ADDR = "http://127.0.0.1:8200"
   }
 
   stages {
@@ -16,7 +17,6 @@ pipeline {
     stage('Validate YAML') {
       steps {
         sh '''
-          echo "Running YAML lint..."
           find . -name "*.yaml" -exec yamllint {} +
         '''
       }
@@ -24,81 +24,65 @@ pipeline {
 
     stage('Validate Kubernetes Access') {
       steps {
-        sh '''
-          echo "Checking cluster connectivity..."
-          kubectl get nodes
-        '''
+        sh 'kubectl get nodes'
       }
     }
 
     stage('Policy Guardrails') {
       steps {
         sh '''
-          echo "Checking for forbidden operations..."
-        
-          if grep -R "kubectl delete" . \
-            --exclude=Jenkinsfile; then
-            echo "ERROR: kubectl delete is not allowed in this repo"
-            exit 1
-          fi
-
-          if grep -R "helm uninstall" . \
-            --exclude=Jenkinsfile; then
-            echo "ERROR: helm uninstall is not allowed in this repo"
-            exit 1
-          fi
+          if grep -R "kubectl delete" . --exclude=Jenkinsfile; then exit 1; fi
+          if grep -R "helm uninstall" . --exclude=Jenkinsfile; then exit 1; fi
         '''
       }
     }
 
     stage('Manual Approval') {
       steps {
-        input message: "Approve platform changes to be merged?"
+        input message: "Approve platform changes?"
       }
     }
-    
-    stage('Terraform Apply (Develop)') {
 
+    stage('Fetch Secrets from Vault') {
+      steps {
+        script {
+          env.DB_USER = sh(
+            script: 'vault kv get -field=db_user platform/jenkins',
+            returnStdout: true
+          ).trim()
+
+          env.DB_PASSWORD = sh(
+            script: 'vault kv get -field=db_password platform/jenkins',
+            returnStdout: true
+          ).trim()
+        }
+      }
+    }
+
+    stage('Terraform Apply (Develop)') {
       steps {
         sh '''
           cd terraform/develop
           terraform init
-            
           terraform apply -auto-approve
-       '''
+        '''
       }
     }
- 
-    stage('Ansible Configuration') {
-      steps {
-         sh '''
-           cd scripts/ansible
-           ansible-playbook -i inventory.ini site.yml \
-               --extra-vars "db_user=$DB_USER db_password=$DB_PASSWORD"
-            '''
-      }
-    }
-        
-     stage('Fetch Secrets from Vault') {
-       steps {
-          sh '''
-            export DB_USER=$(vault kv get -field=db_user platform/jenkins)
-            export DB_PASSWORD=$(vault kv get -field=db_password platform/jenkins)
 
-            echo "Secrets fetched successfully (values hidden)"
-             
-            '''
-      }
-    }
-    
     stage('Process Self-Service Requests') {
       steps {
-         sh 'scripts/process-namespace-requests.sh'
+        sh 'scripts/process-namespace-requests.sh'
       }
     }
 
-    
-   
+    stage('Ansible Configuration') {
+      steps {
+        sh '''
+          cd scripts/ansible
+          ansible-playbook -i inventory.ini site.yml \
+            --extra-vars "db_user=$DB_USER db_password=$DB_PASSWORD"
+        '''
+      }
+    }
   }
 }
-	
