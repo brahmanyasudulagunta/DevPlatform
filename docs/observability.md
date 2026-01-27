@@ -1,15 +1,17 @@
-# Observability Stack
+# Monitoring & Observability
 
-## Metrics
-- Prometheus (kube-prometheus-stack)
+This platform relies on a **shared `monitoring` namespace**
+that provides:
 
-## Logs
-- Loki
+- Prometheus
+- Alertmanager
+- Node Exporter
+- kube-state-metrics
+- Loki + Promtail
 
-## Dashboards
-- Kubernetes cluster overview
-- Node health
-- Pod health
-
-## Access
-- Grafana: http://localhost:3000
+This repository does NOT install observability components.
+It only defines:
+- SLIs
+- SLOs
+- Alerting logic
+- Reliability practices
