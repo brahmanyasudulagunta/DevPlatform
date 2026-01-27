@@ -18,10 +18,15 @@ provider "kubernetes" {
 
 module "develop_namespace" {
   source = "../modules/namespace"
-  name   = "develop"
+  name   = var.name
 }
 
  module "test_namespace" {
   source = "../modules/namespace"
   name   = "test-jenkins"
+}
+
+variable "name" {
+  description = "Namespace name from self-service request"
+  type        = string
 }
