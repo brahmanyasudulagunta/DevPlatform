@@ -93,6 +93,28 @@ pipeline {
       }
     }
     
+    stage('Process Self-Service Requests') {
+      steps {
+         sh '''
+           echo "Scanning for namespace requests..."
+
+           for file in clusters/dev/requests/*.yaml; do
+             echo "Found request: $file"
+             NAME=$(grep "name:" $file | awk '{print $2}')
+             ENV=$(grep "environment:" $file | awk '{print $2}')
+
+             echo "Requested namespace: $NAME in $ENV"
+
+             cd terraform/$ENV
+             terraform init
+             terraform apply -auto-approve \
+                -var="namespace_name=$NAME"
+           done
+        '''
+      }
+    }
+
+    
    
   }
 }
