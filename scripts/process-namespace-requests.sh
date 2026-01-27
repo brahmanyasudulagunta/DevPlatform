@@ -13,8 +13,8 @@ echo "Processing namespace requests in $REQUEST_DIR"
 for file in "$REQUEST_DIR"/*.yaml; do
   [ -e "$file" ] || { echo "No request files found."; exit 0; }
 
-  NAME=$(yq '.metadata.name' "$file")
-  ENV=$(yq '.spec.environment' "$file")
+  NAME=$(yq -r '.metadata.name' "$file")
+  ENV=$(yq -r '.spec.environment' "$file")
 
   echo "Request detected:"
   echo "  Namespace: $NAME"
