@@ -9,5 +9,6 @@
       - htop
       - tree
       - jq
+      - yq
     state: present
     update_cache: true
