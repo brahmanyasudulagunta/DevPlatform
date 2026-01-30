@@ -63,8 +63,7 @@ pipeline {
       steps {
         sh '''
           cd scripts/ansible
-          ansible-playbook -i inventory.ini site.yml \
-            --extra-vars "db_user=$DB_USER db_password=$DB_PASSWORD"
+          ansible-playbook -i inventory.ini site.yml 
         '''
       }
     }
