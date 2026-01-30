@@ -22,6 +22,6 @@ for file in "$REQUEST_DIR"/*.yaml; do
 
   cd "terraform/$ENV"
   terraform init -input=false
-  terraform apply -auto-approve -var="name=$NAME"
+  terraform apply -auto-approve -var="requested_namespaces=[\"$NAME\"]"
   cd -
 done
