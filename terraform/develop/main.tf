@@ -1,5 +1,4 @@
 terraform {
-  
   required_providers {
     kubernetes = {
       source  = "hashicorp/kubernetes"
@@ -13,20 +12,35 @@ terraform {
 }
 
 provider "kubernetes" {
-  config_path = "/home/brahmanya/.kube/config"
+  config_path = "/var/lib/jenkins/.kube/config"
 }
+
+#################################
+# EXISTING, FIXED NAMESPACES
+#################################
 
 module "develop_namespace" {
   source = "../modules/namespace"
-  name   = var.name
+  name   = "develop"
 }
 
- module "test_namespace" {
+module "test_namespace" {
   source = "../modules/namespace"
   name   = "test-jenkins"
 }
 
-variable "name" {
-  description = "Namespace name from self-service request"
-  type        = string
+#################################
+# SELF-SERVICE NAMESPACES (ADD-ONLY)
+#################################
+
+variable "requested_namespaces" {
+  description = "Namespaces requested via self-service"
+  type        = set(string)
+  default     = []
+}
+
+module "requested_namespaces" {
+  for_each = var.requested_namespaces
+  source   = "../modules/namespace"
+  name     = each.value
 }
