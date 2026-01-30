@@ -43,16 +43,6 @@ pipeline {
       }
     }
 
-    stage('Terraform Apply (Develop)') {
-      steps {
-        sh '''
-          cd terraform/develop
-          terraform init
-          terraform apply -auto-approve
-        '''
-      }
-    }
-
     stage('Process Self-Service Requests') {
       steps {
         sh 'scripts/process-namespace-requests.sh'
