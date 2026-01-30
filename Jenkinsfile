@@ -43,22 +43,6 @@ pipeline {
       }
     }
 
-    stage('Fetch Secrets from Vault') {
-      steps {
-        script {
-          env.DB_USER = sh(
-            script: 'vault kv get -field=db_user platform/jenkins',
-            returnStdout: true
-          ).trim()
-
-          env.DB_PASSWORD = sh(
-            script: 'vault kv get -field=db_password platform/jenkins',
-            returnStdout: true
-          ).trim()
-        }
-      }
-    }
-
     stage('Terraform Apply (Develop)') {
       steps {
         sh '''
