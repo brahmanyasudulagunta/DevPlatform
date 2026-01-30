@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-REQUEST_DIR="clusters/requests"
+REQUEST_DIR="clusters/develop/requests"
 
 if [ ! -d "$REQUEST_DIR" ]; then
   echo "No request directory found at $REQUEST_DIR. Skipping."
