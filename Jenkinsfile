@@ -43,18 +43,18 @@ pipeline {
       }
     }
 
-    stage('Process Self-Service Requests') {
-      steps {
-        sh 'scripts/process-namespace-requests.sh'
-      }
-    }
-
     stage('Ansible Configuration') {
       steps {
         sh '''
           cd scripts/ansible
           ansible-playbook -i inventory.ini site.yml 
         '''
+      }
+    }
+
+    stage('Process Self-Service Requests') {
+      steps {
+        sh 'scripts/process-namespace-requests.sh'
       }
     }
   }
