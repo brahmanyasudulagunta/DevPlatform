@@ -10,6 +10,9 @@ fi
 
 echo "Processing namespace requests in $REQUEST_DIR"
 
+# 🔹 ADD: array to accumulate namespaces
+REQUESTED_NS=()
+
 for file in "$REQUEST_DIR"/*.yaml; do
   [ -e "$file" ] || { echo "No request files found."; exit 0; }
 
@@ -20,8 +23,27 @@ for file in "$REQUEST_DIR"/*.yaml; do
   echo "  Namespace: $NAME"
   echo "  Environment: $ENV"
 
-  cd "terraform/$ENV"
-  terraform init -input=false
-  terraform apply -auto-approve -var="requested_namespaces=[\"$NAME\"]"
-  cd -
+  # Only process develop environment
+  if [ "$ENV" != "develop" ]; then
+    echo "Skipping $NAME (env=$ENV)"
+    continue
+  fi
+
+  # 🔹 ADD: collect namespace instead of applying immediately
+  REQUESTED_NS+=("\"$NAME\"")
 done
+
+# 🔹 ADD: run Terraform ONCE with ALL namespaces
+if [ "${#REQUESTED_NS[@]}" -gt 0 ]; then
+  NS_LIST=$(printf ",%s" "${REQUESTED_NS[@]}")
+  NS_LIST="[${NS_LIST:1}]"
+
+  echo "Applying Terraform with namespaces: $NS_LIST"
+
+  cd "terraform/develop"
+  terraform init -input=false
+  terraform apply -auto-approve -var="requested_namespaces=$NS_LIST"
+  cd -
+else
+  echo "No namespaces to process."
+fi
