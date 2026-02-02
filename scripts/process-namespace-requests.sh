@@ -1,49 +1,32 @@
 #!/bin/bash
-set -euo pipefail
+set -e
 
 REQUEST_DIR="clusters/develop/requests"
 
-if [ ! -d "$REQUEST_DIR" ]; then
-  echo "No request directory found at $REQUEST_DIR. Skipping."
-  exit 0
-fi
-
 echo "Processing namespace requests in $REQUEST_DIR"
 
-# 🔹 ADD: array to accumulate namespaces
-REQUESTED_NS=()
+NAMESPACES=()
 
-for file in "$REQUEST_DIR"/*.yaml; do
-  [ -e "$file" ] || { echo "No request files found."; exit 0; }
-
-  NAME=$(yq -r '.metadata.name' "$file")
-  ENV=$(yq -r '.spec.environment' "$file")
-
+for file in $REQUEST_DIR/*.yaml; do
   echo "Request detected:"
+  NAME=$(grep "name:" "$file" | awk '{print $2}')
+  ENV=$(grep "environment:" "$file" | awk '{print $2}')
+
   echo "  Namespace: $NAME"
   echo "  Environment: $ENV"
 
-  # Only process develop environment
-  if [ "$ENV" != "develop" ]; then
-    echo "Skipping $NAME (env=$ENV)"
-    continue
+  # 🚫 BLOCK if namespace already exists
+  if kubectl get namespace "$NAME" >/dev/null 2>&1; then
+    echo "❌ ERROR: Namespace '$NAME' already exists."
+    echo "Terraform must be the sole creator of namespaces."
+    exit 1
   fi
 
-  # 🔹 ADD: collect namespace instead of applying immediately
-  REQUESTED_NS+=("\"$NAME\"")
+  NAMESPACES+=("$NAME")
 done
 
-# 🔹 ADD: run Terraform ONCE with ALL namespaces
-if [ "${#REQUESTED_NS[@]}" -gt 0 ]; then
-  NS_LIST=$(printf ",%s" "${REQUESTED_NS[@]}")
-  NS_LIST="[${NS_LIST:1}]"
+echo "All requests are valid. Proceeding with Terraform."
 
-  echo "Applying Terraform with namespaces: $NS_LIST"
-
-  cd "terraform/develop"
-  terraform init -input=false
-  terraform apply -auto-approve -var="requested_namespaces=$NS_LIST"
-  cd -
-else
-  echo "No namespaces to process."
-fi
+cd terraform/develop
+terraform init
+terraform apply -auto-approve
