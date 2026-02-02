@@ -19,12 +19,12 @@ for file in "$REQUEST_DIR"/*.yaml; do
   echo "  Environment: $ENV_REQ"
 
   if [ "$ENV_REQ" != "$ENV" ]; then
-    echo "❌ ERROR: Environment mismatch in $file"
+    echo "ERROR: Environment mismatch in $file"
     exit 1
   fi
 
   if kubectl get namespace "$NAME" >/dev/null 2>&1; then
-    echo "⚠️  Namespace '$NAME' already exists — skipping (legacy or already provisioned)"
+    echo "Namespace '$NAME' already exists — skipping (legacy or already provisioned)"
     continue
   fi
 
@@ -32,7 +32,7 @@ for file in "$REQUEST_DIR"/*.yaml; do
 done
 
 if [ "${#NEW_NAMESPACES[@]}" -eq 0 ]; then
-  echo "ℹ️  No new namespaces to create. Exiting cleanly."
+  echo "No new namespaces to create. Exiting cleanly."
   exit 0
 fi
 
