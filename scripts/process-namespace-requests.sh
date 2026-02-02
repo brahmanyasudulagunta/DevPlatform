@@ -1,32 +1,47 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 REQUEST_DIR="clusters/develop/requests"
+ENV="develop"
 
 echo "Processing namespace requests in $REQUEST_DIR"
 
-NAMESPACES=()
+NEW_NAMESPACES=()
 
-for file in $REQUEST_DIR/*.yaml; do
+for file in "$REQUEST_DIR"/*.yaml; do
+  [ -e "$file" ] || continue
+
+  NAME=$(grep "^ *name:" "$file" | awk '{print $2}')
+  ENV_REQ=$(grep "^ *environment:" "$file" | awk '{print $2}')
+
   echo "Request detected:"
-  NAME=$(grep "name:" "$file" | awk '{print $2}')
-  ENV=$(grep "environment:" "$file" | awk '{print $2}')
-
   echo "  Namespace: $NAME"
-  echo "  Environment: $ENV"
+  echo "  Environment: $ENV_REQ"
 
-  # 🚫 BLOCK if namespace already exists
-  if kubectl get namespace "$NAME" >/dev/null 2>&1; then
-    echo "❌ ERROR: Namespace '$NAME' already exists."
-    echo "Terraform must be the sole creator of namespaces."
+  if [ "$ENV_REQ" != "$ENV" ]; then
+    echo "❌ ERROR: Environment mismatch in $file"
     exit 1
   fi
 
-  NAMESPACES+=("$NAME")
+  if kubectl get namespace "$NAME" >/dev/null 2>&1; then
+    echo "⚠️  Namespace '$NAME' already exists — skipping (legacy or already provisioned)"
+    continue
+  fi
+
+  NEW_NAMESPACES+=("$NAME")
 done
 
-echo "All requests are valid. Proceeding with Terraform."
+if [ "${#NEW_NAMESPACES[@]}" -eq 0 ]; then
+  echo "ℹ️  No new namespaces to create. Exiting cleanly."
+  exit 0
+fi
 
-cd terraform/develop
-terraform init
-terraform apply -auto-approve
+echo "New namespaces to be created:"
+printf ' - %s\n' "${NEW_NAMESPACES[@]}"
+
+cd "terraform/$ENV"
+
+terraform init -input=false
+
+terraform apply -auto-approve \
+  -var="requested_namespaces=${NEW_NAMESPACES[*]}"
