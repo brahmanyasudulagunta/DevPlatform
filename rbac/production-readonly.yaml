@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: production
+  name: readonly
+rules:
+- apiGroups: ["", "apps"]
+  resources:
+    - pods
+    - services
+    - deployments
+  verbs:
+    - get
+    - list
