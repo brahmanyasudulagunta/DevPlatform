@@ -4,14 +4,14 @@ kind: ClusterRole
 metadata:
   name: jenkins-platform-role
 rules:
-- apiGroups: ["", "apps"]
-  resources:
-    - namespaces
-    - pods
-    - services
-    - deployments
-  verbs:
-    - get
-    - list
-    - create
-    - update
+  - apiGroups: ["", "apps"]
+    resources:
+      - namespaces
+      - pods
+      - services
+      - deployments
+    verbs:
+      - get
+      - list
+      - create
+      - update

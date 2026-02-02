@@ -5,8 +5,8 @@ metadata:
   name: staging-binding
   namespace: staging
 subjects:
-- kind: Group
-  name: developers
+  - kind: Group
+    name: developers
 roleRef:
   kind: Role
   name: developer

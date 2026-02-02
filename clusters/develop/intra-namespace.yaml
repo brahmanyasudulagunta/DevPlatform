@@ -7,5 +7,5 @@ metadata:
 spec:
   podSelector: {}
   ingress:
-  - from:
+    - from:
     - podSelector: {}

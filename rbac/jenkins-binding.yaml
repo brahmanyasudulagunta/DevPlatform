@@ -4,9 +4,9 @@ kind: ClusterRoleBinding
 metadata:
   name: jenkins-platform-binding
 subjects:
-- kind: ServiceAccount
-  name: jenkins
-  namespace: jenkins
+  - kind: ServiceAccount
+    name: jenkins
+    namespace: jenkins
 roleRef:
   kind: ClusterRole
   name: jenkins-platform-role

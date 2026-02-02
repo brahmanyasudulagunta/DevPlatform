@@ -5,8 +5,8 @@ metadata:
   name: developer-binding
   namespace: develop
 subjects:
-- kind: Group
-  name: developers
+  - kind: Group
+    name: developers
 roleRef:
   kind: Role
   name: developer
