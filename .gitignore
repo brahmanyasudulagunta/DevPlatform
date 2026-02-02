@@ -1,7 +1,7 @@
 # Terraform
 .terraform/
-# Note: *.tfstate committed to git for state persistence across Jenkins builds
-# For production, use a remote backend (S3, GCS, etc.) instead
+.tfstate
+*.tfstate.*
 *.tfvars
 crash.log
 crash.*.log
