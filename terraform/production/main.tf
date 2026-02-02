@@ -13,7 +13,7 @@ terraform {
 }
 
 provider "kubernetes" {
-  # Uses ~/.kube/config by default, or KUBECONFIG env var
+  config_path = "/var/lib/jenkins/.kube/config"
 }
 
 module "production_namespace" {
