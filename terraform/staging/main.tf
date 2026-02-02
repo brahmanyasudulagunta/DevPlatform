@@ -13,7 +13,7 @@ terraform {
 }
 
 provider "kubernetes" {
-  config_path = "/home/brahmanya/.kube/config"  
+  # Uses ~/.kube/config by default, or KUBECONFIG env var
 }
 
 module "staging_namespace" {

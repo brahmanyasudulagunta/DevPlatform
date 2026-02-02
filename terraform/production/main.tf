@@ -8,12 +8,12 @@ terraform {
   }
 
   backend "local" {
-    path = "terraform-produciton.tfstate"
+    path = "terraform-production.tfstate"
   }
 }
 
 provider "kubernetes" {
-  config_path = "/home/brahmanya/.kube/config"
+  # Uses ~/.kube/config by default, or KUBECONFIG env var
 }
 
 module "production_namespace" {
