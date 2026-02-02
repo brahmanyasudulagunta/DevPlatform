@@ -24,11 +24,11 @@ for file in "$REQUEST_DIR"/*.yaml; do
   fi
 
   if kubectl get namespace "$NAME" >/dev/null 2>&1; then
-    echo "Namespace '$NAME' already exists — skipping (legacy or already provisioned)"
+    echo "Namespace '$NAME' already exists — skipping"
     continue
   fi
 
-  NEW_NAMESPACES+=("$NAME")
+  NEW_NAMESPACES+=("\"$NAME\"")
 done
 
 if [ "${#NEW_NAMESPACES[@]}" -eq 0 ]; then
@@ -36,12 +36,13 @@ if [ "${#NEW_NAMESPACES[@]}" -eq 0 ]; then
   exit 0
 fi
 
-echo "New namespaces to be created:"
-printf ' - %s\n' "${NEW_NAMESPACES[@]}"
+NAMESPACE_JSON="[$(IFS=,; echo "${NEW_NAMESPACES[*]}")]"
+
+echo "New namespaces to be created: $NAMESPACE_JSON"
 
 cd "terraform/$ENV"
 
 terraform init -input=false
 
 terraform apply -auto-approve \
-  -var="requested_namespaces=${NEW_NAMESPACES[*]}"
+  -var="requested_namespaces=${NAMESPACE_JSON}"
