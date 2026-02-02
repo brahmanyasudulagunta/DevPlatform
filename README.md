@@ -25,7 +25,7 @@ Developer → Git PR → Jenkins (validate/approve) → Terraform → Argo CD �
 |---------|-------------|
 | **Self-Service Namespaces** | Request namespaces via YAML—no tickets, no waiting |
 | **GitOps Deployment** | Argo CD auto-syncs with self-healing enabled |
-| **Policy Guardrails** | Blocks destructive operations (`kubectl delete`, `helm uninstall`) |
+| **Policy Guardrails** | Blocks destructive operations |
 | **Multi-Environment** | Isolated `develop`, `staging`, and `production` environments |
 | **Zero-Trust Networking** | Default-deny network policies per namespace |
 | **RBAC Enforcement** | Role-based access with least-privilege principles |
@@ -177,14 +177,6 @@ spec:
 | `platform-admin` | cluster | Full admin access |
 | `jenkins-platform-role` | cluster | Create/Update (no delete) |
 | `production-readonly` | prod | Read-only |
-
-### CI Guardrails
-
-The pipeline blocks dangerous patterns:
-- `kubectl delete` commands
-- `helm uninstall` commands
-
----
 
 ## Environments
 
