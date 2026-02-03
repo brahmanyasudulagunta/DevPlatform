@@ -1,4 +1,4 @@
-# DevPlatform
+# GitOps Platform Engineering
 
 A cloud-free Internal Developer Platform (IDP) implementing GitOps, self-service infrastructure, and SRE best practices.
 
