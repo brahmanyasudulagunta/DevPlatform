@@ -1,9 +1,0 @@
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: platform-info
-  namespace: kube-system
-data:
-  owner: "platform-team"
-  purpose: "self-service-platform"
