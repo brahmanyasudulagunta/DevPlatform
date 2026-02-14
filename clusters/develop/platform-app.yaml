@@ -1,3 +1,4 @@
+
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -7,7 +8,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/Ashrith2727/DevPlatform.git
+    repoURL: https://github.com/brahmanyasudulagunta/DevPlatform.git
     targetRevision: main
     path: namespaces
   destination:
