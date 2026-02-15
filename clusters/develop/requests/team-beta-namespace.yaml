@@ -1,7 +1,0 @@
----
-kind: NamespaceRequest
-metadata:
-  name: team-beta
-spec:
-  environment: develop
-  owner: team-beta
