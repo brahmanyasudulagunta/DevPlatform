@@ -17,6 +17,9 @@ provider "kubernetes" {
 }
 
 module "production_namespace" {
-  source = "../modules/namespace"
-  name   = "production"
+  source       = "../modules/namespace"
+  name         = "production"
+  cpu_limit    = "8"
+  memory_limit = "16Gi"
+  max_pods     = 30
 }
