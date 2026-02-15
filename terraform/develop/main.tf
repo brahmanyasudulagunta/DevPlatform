@@ -20,8 +20,11 @@ provider "kubernetes" {
 #################################
 
 module "develop_namespace" {
-  source = "../modules/namespace"
-  name   = "develop"
+  source       = "../modules/namespace"
+  name         = "develop"
+  cpu_limit    = "4"
+  memory_limit = "8Gi"
+  max_pods     = 20
 }
 
 module "test_namespace" {

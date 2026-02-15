@@ -3,7 +3,7 @@ pipeline {
 
   environment {
     KUBECONFIG = "${HOME}/.kube/config"
-   }
+  }
 
   stages {
 
@@ -46,7 +46,37 @@ pipeline {
       steps {
         sh '''
           cd scripts/ansible
-          ansible-playbook -i inventory.ini site.yml 
+          ansible-playbook -i inventory.ini site.yml
+        '''
+      }
+    }
+
+    stage('Terraform - Develop') {
+      steps {
+        sh '''
+          cd terraform/develop
+          terraform init -input=false
+          terraform apply -auto-approve
+        '''
+      }
+    }
+
+    stage('Terraform - Staging') {
+      steps {
+        sh '''
+          cd terraform/staging
+          terraform init -input=false
+          terraform apply -auto-approve
+        '''
+      }
+    }
+
+    stage('Terraform - Production') {
+      steps {
+        sh '''
+          cd terraform/production
+          terraform init -input=false
+          terraform apply -auto-approve
         '''
       }
     }
@@ -54,6 +84,18 @@ pipeline {
     stage('Process Self-Service Requests') {
       steps {
         sh 'scripts/process-namespace-requests.sh'
+      }
+    }
+
+    stage('Apply RBAC Policies') {
+      steps {
+        sh 'kubectl apply -f rbac/'
+      }
+    }
+
+    stage('Apply Network Policies') {
+      steps {
+        sh 'kubectl apply -f network-policies/'
       }
     }
   }

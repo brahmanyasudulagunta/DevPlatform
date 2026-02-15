@@ -1,34 +1,20 @@
-# GitOps Platform Engineering
+# DevPlatform
 
-A cloud-free Internal Developer Platform (IDP) implementing GitOps, self-service infrastructure, and SRE best practices.
+A CI-driven platform that provisions secure, isolated Kubernetes environments for developer teams through Git-based self-service.
 
 [![Jenkins](https://img.shields.io/badge/CI-Jenkins-D24939?logo=jenkins&logoColor=white)](https://jenkins.io)
-[![Argo CD](https://img.shields.io/badge/CD-Argo%20CD-EF7B4D?logo=argo&logoColor=white)](https://argoproj.github.io/cd/)
 [![Terraform](https://img.shields.io/badge/IaC-Terraform-7B42BC?logo=terraform&logoColor=white)](https://terraform.io)
 [![Kubernetes](https://img.shields.io/badge/Runtime-Kubernetes-326CE5?logo=kubernetes&logoColor=white)](https://kubernetes.io)
 
 ---
 
-## Overview
+## What This Does
 
-DevPlatform enables developer self-service through Git-based workflows. Developers request resources via pull requests, changes are validated and approved through CI, and infrastructure is provisioned automatically—all without direct cluster access.
+When a new team needs a Kubernetes namespace, they don't wait for an admin. They submit a request through Git → Jenkins validates and approves → Terraform provisions the namespace with RBAC, network policies, and resource quotas — ready to use in minutes.
 
 ```
-Developer → Git PR → Jenkins (validate/approve) → Terraform → Argo CD → Kubernetes
+Developer PR → Jenkins (validate/approve) → Terraform → Secure Namespace Ready
 ```
-
----
-
-## Features
-
-| Feature | Description |
-|---------|-------------|
-| **Self-Service Namespaces** | Request namespaces via YAML—no tickets, no waiting |
-| **GitOps Deployment** | Argo CD auto-syncs with self-healing enabled |
-| **Policy Guardrails** | Blocks destructive operations |
-| **Multi-Environment** | Isolated `develop`, `staging`, and `production` environments |
-| **Zero-Trust Networking** | Default-deny network policies per namespace |
-| **RBAC Enforcement** | Role-based access with least-privilege principles |
 
 ---
 
@@ -36,74 +22,77 @@ Developer → Git PR → Jenkins (validate/approve) → Terraform → Argo CD �
 
 ```
 DevPlatform/
-├── clusters/                    # Environment-specific configurations
-│   ├── develop/
-│   │   ├── platform-app.yaml    # Argo CD Application
-│   │   ├── network-policy.yaml  # Default-deny policy
-│   │   ├── intra-namespace.yaml # Allow internal pod traffic
-│   │   └── requests/            # Self-service namespace requests
-│   ├── staging/
-│   └── production/
 ├── terraform/
-│   ├── modules/namespace/       # Reusable namespace module
-│   ├── develop/                 # Dev environment state
-│   ├── staging/
-│   └── production/
+│   ├── modules/namespace/       # Reusable module (namespace + quota + limits)
+│   ├── develop/main.tf          # Dev environment
+│   ├── staging/main.tf          # Staging environment
+│   └── production/main.tf       # Production environment
 ├── rbac/                        # Kubernetes RBAC policies
-│   ├── developer.yaml           # Developer role (develop namespace)
-│   ├── platform-admin.yaml      # Cluster admin binding
+│   ├── developer.yaml           # Developer role (develop)
+│   ├── staging-developer.yaml   # Developer role (staging)
+│   ├── production-readonly.yaml # Read-only role (production)
+│   ├── platform-admin.yaml      # Cluster admin
 │   ├── jenkins-clusterrole.yaml # Jenkins service account
-│   └── production-readonly.yaml # Read-only prod access
-├── namespaces/                  # Namespace definitions
+│   └── *-binding.yaml           # Role bindings
+├── network-policies/            # Network isolation per namespace
+│   ├── develop-default-deny.yaml
+│   ├── develop-allow-internal.yaml
+│   ├── staging-default-deny.yaml
+│   └── production-default-deny.yaml
 ├── scripts/
-│   ├── ansible/                 # Configuration management
-│   └── process-namespace-requests.sh
-├── bootstrap/                   # Initial cluster resources
-├── docs/                        # Documentation
-└── Jenkinsfile                  # CI pipeline definition
+│   ├── ansible/                 # System configuration
+│   ├── process-namespace-requests.sh
+│   └── validate-cluster.sh
+├── docs/
+├── Jenkinsfile                  # CI pipeline
+└── README.md
 ```
 
 ---
 
-## Quick Start
+## What Each Namespace Gets
 
-### Prerequisites
+Every namespace provisioned by this platform comes with:
 
-- Kubernetes cluster (k3s/Kind/minikube)
-- Jenkins with kubectl access
-- Argo CD installed
-- Terraform ≥ 1.0
-- Tools: `yq`, `yamllint`
+| Resource | Purpose |
+|----------|---------|
+| **Namespace** | Isolated environment |
+| **ResourceQuota** | CPU, memory, and pod limits |
+| **LimitRange** | Default container resource limits |
+| **RBAC Role + Binding** | Who can do what |
+| **NetworkPolicy** | Default-deny, allow only internal traffic |
+| **Labels** | `managed-by: devplatform` for tracking |
 
-### 1. Bootstrap the Platform
+---
 
-```bash
-# Apply base resources
-kubectl apply -f bootstrap/base-resources.yaml
+## Resource Limits
 
-# Apply RBAC policies
-kubectl apply -f rbac/
+| Environment | CPU | Memory | Max Pods |
+|-------------|-----|--------|----------|
+| develop | 4 cores | 8Gi | 20 |
+| staging | 4 cores | 8Gi | 15 |
+| production | 8 cores | 16Gi | 30 |
 
-# Apply namespace definitions
-kubectl apply -f namespaces/
-```
+---
 
-### 2. Deploy Argo CD Applications
+## Jenkins Pipeline
 
-```bash
-# Deploy for each environment
-kubectl apply -f clusters/develop/platform-app.yaml
-kubectl apply -f clusters/staging/platform-app.yaml
-kubectl apply -f clusters/production/platform-app.yaml
-```
+The Jenkinsfile runs 11 stages in order:
 
-### 3. Initialize Terraform
-
-```bash
-cd terraform/develop
-terraform init
-terraform apply
-```
+| # | Stage | Purpose |
+|---|-------|---------|
+| 1 | Checkout | Pull latest code |
+| 2 | Validate YAML | Lint all YAML files |
+| 3 | Validate K8s Access | Confirm cluster connectivity |
+| 4 | Policy Guardrails | Block destructive commands |
+| 5 | Manual Approval | Human sign-off required |
+| 6 | Ansible Configuration | Install required tools |
+| 7 | Terraform - Develop | Provision dev namespaces + quotas |
+| 8 | Terraform - Staging | Provision staging namespaces + quotas |
+| 9 | Terraform - Production | Provision production namespaces + quotas |
+| 10 | Self-Service Requests | Process new namespace requests |
+| 11 | Apply RBAC | Apply role-based access control |
+| 12 | Apply Network Policies | Apply network isolation rules |
 
 ---
 
@@ -111,7 +100,7 @@ terraform apply
 
 ### Requesting a New Namespace
 
-1. Create a request file in `clusters/develop/requests/`:
+1. Create a request file:
 
 ```yaml
 # clusters/develop/requests/my-team-namespace.yaml
@@ -125,108 +114,46 @@ spec:
 
 2. Submit a pull request
 3. Jenkins validates and requests approval
-4. On merge, Terraform provisions the namespace automatically
+4. On merge, Terraform provisions the namespace with quotas and limits
 
 ---
 
-## CI/CD Pipeline
+## RBAC Model
 
-### Jenkins Stages
-
-| Stage | Purpose |
-|-------|---------|
-| **Validate YAML** | Lints all YAML files with `yamllint` |
-| **Validate K8s Access** | Confirms cluster connectivity |
-| **Policy Guardrails** | Blocks destructive commands |
-| **Manual Approval** | Requires human sign-off |
-| **Ansible Config** | Runs configuration playbooks |
-| **Process Requests** | Provisions self-service namespaces |
-
-### GitOps with Argo CD
-
-Argo CD continuously reconciles the cluster state with Git:
-
-- **Auto-sync**: Changes in Git are automatically applied
-- **Self-heal**: Manual drift is automatically corrected
-- **Prune**: Removed resources are cleaned up
+| Role | Scope | Access |
+|------|-------|--------|
+| `developer` | develop, staging | CRUD on pods, services, deployments |
+| `readonly` | production | Read-only |
+| `platform-admin` | cluster | Full admin |
+| `jenkins-platform-role` | cluster | Create/Update (no delete) |
 
 ---
 
 ## Security
 
-### Network Policies
-
-Each namespace enforces network isolation:
-
-```yaml
-# Default: deny all traffic
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: default-deny
-spec:
-  podSelector: {}
-  policyTypes: [Ingress, Egress]
-```
-
-### RBAC Roles
-
-| Role | Scope | Access Level |
-|------|-------|--------------|
-| `developer` | develop | CRUD on pods, services, deployments |
-| `platform-admin` | cluster | Full admin access |
-| `jenkins-platform-role` | cluster | Create/Update (no delete) |
-| `production-readonly` | prod | Read-only |
-
-## Environments
-
-| Environment | Namespace | Purpose |
-|-------------|-----------|---------|
-| Development | `develop` | Feature development, experimentation |
-| Staging | `staging` | Pre-production validation |
-| Production | `prod` | Live workloads |
-
-Each environment has:
-- Isolated Argo CD Application
-- Independent Terraform state
-- Separate network policies
-- Environment-specific RBAC
+- **Default-deny** network policies on all namespaces
+- **RBAC** with least-privilege per environment
+- **Policy guardrails** block `kubectl delete` and `helm uninstall`
+- **Manual approval** required before any infrastructure changes
+- **Resource quotas** prevent resource exhaustion
 
 ---
 
 ## Toolchain
 
-| Layer | Tool | Purpose |
-|-------|------|---------|
-| CI | Jenkins | Validation, approvals, automation |
-| CD | Argo CD | GitOps continuous delivery |
-| IaC | Terraform | Infrastructure provisioning |
-| Config | Ansible | System configuration |
-| Runtime | Kubernetes | Container orchestration |
+| Tool | Purpose |
+|------|---------|
+| Terraform | Infrastructure provisioning |
+| Jenkins | CI pipeline with guardrails |
+| Ansible | System configuration |
+| Kubernetes | Container orchestration |
 
 ---
 
-## Roadmap
+## Related Repositories
 
-- [ ] Prometheus + Grafana observability stack
-- [ ] HashiCorp Vault for secrets management
-- [ ] Loki for centralized logging
-- [ ] SLI/SLO-based alerting
-- [ ] Cost tracking and resource quotas
-
----
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Submit a pull request
-4. Wait for CI validation and approval
-
-All changes must pass through the Jenkins pipeline—no direct cluster modifications.
-
----
-
-## License
-
-This project is for educational and demonstration purposes.
+| Repo | Purpose |
+|------|---------|
+| `DevPlatform` (this) | Infrastructure provisioning |
+| `gitops` | Application deployment (Argo CD) |
+| `gitops-prod` | Production deployment (Argo CD) |

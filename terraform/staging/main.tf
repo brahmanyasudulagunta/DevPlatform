@@ -17,6 +17,9 @@ provider "kubernetes" {
 }
 
 module "staging_namespace" {
-  source = "../modules/namespace"
-  name   = "staging"
+  source       = "../modules/namespace"
+  name         = "staging"
+  cpu_limit    = "4"
+  memory_limit = "8Gi"
+  max_pods     = 15
 }
