@@ -133,7 +133,7 @@ spec:
 
 - **Default-deny** network policies on all namespaces
 - **RBAC** with least-privilege per environment
-- **Policy guardrails** block `kubectl delete` and `helm uninstall`
+- **Policy guardrails** 
 - **Manual approval** required before any infrastructure changes
 - **Resource quotas** prevent resource exhaustion
 
