@@ -27,11 +27,6 @@ module "develop_namespace" {
   max_pods     = 20
 }
 
-module "test_namespace" {
-  source = "../modules/namespace"
-  name   = "test-jenkins"
-}
-
 #################################
 # SELF-SERVICE NAMESPACES (ADD-ONLY)
 #################################

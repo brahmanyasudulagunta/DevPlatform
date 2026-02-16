@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-REQUEST_DIR="clusters/develop/requests"
+REQUEST_DIR="requests"
 ENV="develop"
 
 echo "Processing namespace requests in $REQUEST_DIR"
