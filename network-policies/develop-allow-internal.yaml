@@ -8,7 +8,7 @@ spec:
   podSelector: {}
   ingress:
     - from:
-       - podSelector: {}
+        - podSelector: {}
   egress:
     - to:
-       - podSelector: {}
+        - podSelector: {}
