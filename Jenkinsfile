@@ -36,12 +36,6 @@ pipeline {
       }
     }
 
-    stage('Manual Approval') {
-      steps {
-        input message: "Approve platform changes?"
-      }
-    }
-
     stage('Ansible Configuration') {
       steps {
         sh '''
@@ -56,7 +50,9 @@ pipeline {
         sh '''
           cd terraform/develop
           terraform init -input=false
-          terraform apply -auto-approve
+          terraform validate
+          terraform plan -out=tfplan
+          terraform apply -auto-approve tfplan
         '''
       }
     }
@@ -66,8 +62,16 @@ pipeline {
         sh '''
           cd terraform/staging
           terraform init -input=false
-          terraform apply -auto-approve
+          terraform validate
+          terraform plan -out=tfplan
+          terraform apply -auto-approve tfplan
         '''
+      }
+    }
+
+    stage('Approve Production Deployment') {
+      steps {
+        input message: "Develop and Staging succeeded. Approve production deployment?"
       }
     }
 
@@ -76,7 +80,9 @@ pipeline {
         sh '''
           cd terraform/production
           terraform init -input=false
-          terraform apply -auto-approve
+          terraform validate
+          terraform plan -out=tfplan
+          terraform apply -auto-approve tfplan
         '''
       }
     }
