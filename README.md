@@ -45,17 +45,22 @@ DevPlatform/
 │   ├── staging/main.tf          # Staging environment
 │   └── production/main.tf       # Production environment
 ├── rbac/                        # Kubernetes RBAC policies
-│   ├── developer.yaml           # Developer role (develop namespace)
-│   ├── staging-developer.yaml   # Developer role (staging namespace)
-│   ├── production-readonly.yaml # Read-only role (production namespace)
-│   ├── platform-admin.yaml      # Cluster-wide admin
-│   ├── jenkins-clusterrole.yaml # Jenkins service account role
-│   └── *-binding.yaml           # Role bindings
+│   ├── develop-role.yaml        # Developer role (develop namespace)
+│   ├── develop-rolebinding.yaml # Binds developers group to develop
+│   ├── staging-role.yaml        # Developer role (staging namespace)
+│   ├── staging-rolebinding.yaml # Binds developers group to staging
+│   ├── production-role.yaml     # Read-only role (production namespace)
+│   ├── production-rolebinding.yaml  # Binds developers group to production
+│   ├── cluster-jenkins-role.yaml        # Jenkins ClusterRole (no delete)
+│   ├── cluster-jenkins-rolebinding.yaml # Binds Jenkins SA to ClusterRole
+│   └── cluster-admin-rolebinding.yaml   # Platform admin binding
 ├── network-policies/            # Network isolation per namespace
 │   ├── develop-default-deny.yaml
 │   ├── develop-allow-internal.yaml
 │   ├── staging-default-deny.yaml
-│   └── production-default-deny.yaml
+│   ├── staging-allow-internal.yaml
+│   ├── production-default-deny.yaml
+│   └── production-allow-internal.yaml
 ├── scripts/
 │   ├── ansible/                 # System configuration (base packages)
 │   ├── process-namespace-requests.sh  # Self-service namespace provisioning
@@ -101,7 +106,7 @@ The Jenkinsfile runs these stages in order:
 | 1 | Checkout | Pull latest code |
 | 2 | Validate YAML | Lint all YAML files with yamllint |
 | 3 | Validate K8s Access | Confirm cluster connectivity |
-| 4 | Policy Guardrails | Block destructive commands |
+| 4 | Policy Guardrails | Block destructive commands (`kubectl delete`, `helm uninstall`) |
 | 5 | Ansible Configuration | Install base system packages |
 | 6 | Terraform - Develop | Provision develop namespace + quotas (auto-apply) |
 | 7 | Terraform - Staging | Provision staging namespace + quotas (auto-apply) |
@@ -137,13 +142,13 @@ spec:
 
 ## RBAC Model
 
-| Role | Namespace Scope | Access Level |
-|------|-----------------|--------------|
-| `developer` | develop | CRUD on pods, services, deployments |
-| `staging-developer` | staging | CRUD on pods, services, deployments |
-| `production-readonly` | production | Read-only |
-| `platform-admin` | cluster-wide | Full admin |
-| `jenkins-platform-role` | cluster-wide | Create/Update (no delete) |
+| Role | File | Namespace Scope | Access Level |
+|------|------|-----------------|--------------|
+| `developer` | `develop-role.yaml` | develop | CRUD on pods, services, deployments |
+| `developer` | `staging-role.yaml` | staging | CRUD on pods, services, deployments (no delete) |
+| `readonly` | `production-role.yaml` | production | Read-only (get, list) |
+| `cluster-admin` | `cluster-admin-rolebinding.yaml` | cluster-wide | Full admin |
+| `jenkins-platform-role` | `cluster-jenkins-role.yaml` | cluster-wide | Create/Update (no delete) |
 
 ---
 
