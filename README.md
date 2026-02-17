@@ -101,7 +101,7 @@ The Jenkinsfile runs these stages in order:
 | 1 | Checkout | Pull latest code |
 | 2 | Validate YAML | Lint all YAML files with yamllint |
 | 3 | Validate K8s Access | Confirm cluster connectivity |
-| 4 | Policy Guardrails | Block destructive commands (`kubectl delete`, `helm uninstall`) |
+| 4 | Policy Guardrails | Block destructive commands |
 | 5 | Ansible Configuration | Install base system packages |
 | 6 | Terraform - Develop | Provision develop namespace + quotas (auto-apply) |
 | 7 | Terraform - Staging | Provision staging namespace + quotas (auto-apply) |
