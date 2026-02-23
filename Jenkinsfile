@@ -57,21 +57,9 @@ pipeline {
       }
     }
 
-    stage('Terraform - Staging') {
-      steps {
-        sh '''
-          cd terraform/staging
-          terraform init -input=false
-          terraform validate
-          terraform plan -out=tfplan
-          terraform apply -auto-approve tfplan
-        '''
-      }
-    }
-
     stage('Approve Production Deployment') {
       steps {
-        input message: "Develop and Staging succeeded. Approve production deployment?"
+        input message: "Develop is succeeded. Approve production deployment?"
       }
     }
 
