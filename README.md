@@ -1,128 +1,54 @@
 # DevPlatform
 
-A CI-driven platform that provisions secure, isolated Kubernetes environments for developer teams through Git-based self-service.
+A self-service infrastructure platform that provisions secure Kubernetes namespaces through Git — powered by Terraform, Jenkins, and GitOps.
 
-[![Jenkins](https://img.shields.io/badge/CI-Jenkins-D24939?logo=jenkins&logoColor=white)](https://jenkins.io)
-[![Terraform](https://img.shields.io/badge/IaC-Terraform-7B42BC?logo=terraform&logoColor=white)](https://terraform.io)
-[![Ansible](https://img.shields.io/badge/Config-Ansible-EE0000?logo=ansible&logoColor=white)](https://ansible.com)
-[![Kubernetes](https://img.shields.io/badge/Runtime-Kubernetes-326CE5?logo=kubernetes&logoColor=white)](https://kubernetes.io)
-
----
-
-## Role in the Platform
-
-This is the **infrastructure layer** of a three-repo architecture:
-
-| Repository | Role | Tools |
-|------------|------|-------|
-| **DevPlatform** (this) | Infrastructure provisioning & security | Terraform, Ansible, RBAC, NetworkPolicy |
-| [gitops](https://github.com/brahmanyasudulagunta/gitops) | Application development & CI | Node.js, Docker, Jenkins |
-| [gitops-prod](https://github.com/brahmanyasudulagunta/gitops-prod) | Deployment manifests (GitOps) | Kubernetes manifests, ArgoCD |
-
-```
-DevPlatform provisions the namespaces → gitops-prod deploys the app into them via ArgoCD
-```
+[![Jenkins](https://img.shields.io/badge/CI-Jenkins-D24939?style=for-the-badge&logo=jenkins&logoColor=white)](https://jenkins.io)
+[![Terraform](https://img.shields.io/badge/IaC-Terraform-7B42BC?style=for-the-badge&logo=terraform&logoColor=white)](https://terraform.io)
+[![Ansible](https://img.shields.io/badge/Config-Ansible-EE0000?style=for-the-badge&logo=ansible&logoColor=white)](https://ansible.com)
+[![Kubernetes](https://img.shields.io/badge/Runtime-Kubernetes-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white)](https://kubernetes.io)
+[![ArgoCD](https://img.shields.io/badge/GitOps-ArgoCD-EF7B4D?style=for-the-badge&logo=argo&logoColor=white)](https://argoproj.github.io/cd/)
 
 ---
 
-## What This Does
-
-When a new team needs a Kubernetes namespace, they submit a request through Git → Jenkins validates and approves → Terraform provisions the namespace with RBAC, network policies, and resource quotas — ready to use in minutes.
+## How It Works
 
 ```
-Developer PR → Jenkins (validate/approve) → Terraform → Secure Namespace Ready
+Developer submits PR  →  Jenkins validates & applies  →  Namespace ready ✅
+(requests/team.yaml)     (Terraform + RBAC + NetPol)     (secure & isolated)
 ```
+
+Teams request a namespace by adding a YAML file and opening a PR. Jenkins runs Terraform to provision the namespace with **resource quotas, RBAC, and network policies** — automatically.
 
 ---
 
-## Project Structure
+## Architecture (3-Repo GitOps)
+
+| Repository | Purpose |
+|------------|---------|
+| **DevPlatform** (this) | Infrastructure — namespaces, RBAC, network policies |
+| [gitops](https://github.com/brahmanyasudulagunta/gitops) | App source code, Docker, CI |
+| [gitops-prod](https://github.com/brahmanyasudulagunta/gitops-prod) | K8s manifests, ArgoCD deployments |
 
 ```
-DevPlatform/
-├── terraform/
-│   ├── modules/namespace/       # Reusable module (namespace + quota + limits)
-│   ├── develop/main.tf          # Develop environment
-│   ├── staging/main.tf          # Staging environment
-│   └── production/main.tf       # Production environment
-├── rbac/                        # Kubernetes RBAC policies
-│   ├── develop-role.yaml        # Developer role (develop namespace)
-│   ├── develop-rolebinding.yaml # Binds developers group to develop
-│   ├── staging-role.yaml        # Developer role (staging namespace)
-│   ├── staging-rolebinding.yaml # Binds developers group to staging
-│   ├── production-role.yaml     # Read-only role (production namespace)
-│   ├── production-rolebinding.yaml  # Binds developers group to production
-│   ├── cluster-jenkins-role.yaml        # Jenkins ClusterRole (no delete)
-│   ├── cluster-jenkins-rolebinding.yaml # Binds Jenkins SA to ClusterRole
-│   └── cluster-admin-rolebinding.yaml   # Platform admin binding
-├── network-policies/            # Network isolation per namespace
-│   ├── develop-default-deny.yaml
-│   ├── develop-allow-internal.yaml
-│   ├── staging-default-deny.yaml
-│   ├── staging-allow-internal.yaml
-│   ├── production-default-deny.yaml
-│   └── production-allow-internal.yaml
-├── scripts/
-│   ├── ansible/                 # System configuration (base packages)
-│   ├── process-namespace-requests.sh  # Self-service namespace provisioning
-│   └── validate-cluster.sh      # Cluster health checks
-├── requests/                    # Self-service namespace requests
-│   └── team-alpha.yaml          # Example request
-├── docs/                        # Documentation
-├── Jenkinsfile                  # CI pipeline
-└── README.md
+DevPlatform creates infra  →  gitops-prod deploys apps into it via ArgoCD
 ```
 
 ---
 
 ## Environments
 
-Each environment is provisioned as a Kubernetes namespace with resource quotas and limit ranges:
+| Environment | CPU | Memory | Pods | Developer Access |
+|-------------|-----|--------|------|-----------------|
+| develop | 4 cores | 8Gi | 20 | Full CRUD |
+| production | 8 cores | 16Gi | 30 | Read-only |
 
-| Environment | Namespace | CPU Limit | Memory Limit | Max Pods |
-|-------------|-----------|-----------|--------------|----------|
-| Develop | `develop` | 4 cores | 8Gi | 20 |
-| Staging | `staging` | 4 cores | 8Gi | 15 |
-| Production | `production` | 8 cores | 16Gi | 30 |
-
-Every namespace gets:
-
-| Resource | Purpose |
-|----------|---------|
-| **Namespace** | Isolated environment |
-| **ResourceQuota** | CPU, memory, and pod limits |
-| **LimitRange** | Default container resource limits (500m CPU / 512Mi) |
-| **RBAC Role + Binding** | Who can do what |
-| **NetworkPolicy** | Default-deny, allow only internal traffic |
-| **Labels** | `managed-by: devplatform` for tracking |
+Each namespace automatically gets: ResourceQuota, LimitRange, RBAC, and NetworkPolicy.
 
 ---
 
-## Jenkins Pipeline
+## Self-Service: Request a Namespace
 
-The Jenkinsfile runs these stages in order:
-
-| # | Stage | Purpose |
-|---|-------|---------|
-| 1 | Checkout | Pull latest code |
-| 2 | Validate YAML | Lint all YAML files with yamllint |
-| 3 | Validate K8s Access | Confirm cluster connectivity |
-| 4 | Policy Guardrails | Block destructive commands |
-| 5 | Ansible Configuration | Install base system packages |
-| 6 | Terraform - Develop | Provision develop namespace + quotas (auto-apply) |
-| 7 | Terraform - Staging | Provision staging namespace + quotas (auto-apply) |
-| 8 | Approve Production | Manual approval gate |
-| 9 | Terraform - Production | Provision production namespace + quotas (after approval) |
-| 10 | Self-Service Requests | Process new namespace requests from `requests/` |
-| 11 | Apply RBAC | Apply role-based access control policies |
-| 12 | Apply Network Policies | Apply network isolation rules |
-
----
-
-## Self-Service Workflow
-
-### Requesting a New Namespace
-
-1. Create a request file in `requests/`:
+**1.** Add a request file:
 
 ```yaml
 # requests/my-team.yaml
@@ -134,29 +60,60 @@ spec:
   owner: my-team
 ```
 
-2. Submit a pull request
-3. Jenkins validates and requests approval
-4. On merge, Terraform provisions the namespace with quotas and limits
+**2.** Open a PR → **3.** On merge, Jenkins provisions it via Terraform.
 
 ---
 
-## RBAC Model
+## CI Pipeline (Jenkinsfile)
 
-| Role | File | Namespace Scope | Access Level |
-|------|------|-----------------|--------------|
-| `developer` | `develop-role.yaml` | develop | CRUD on pods, services, deployments |
-| `developer` | `staging-role.yaml` | staging | CRUD on pods, services, deployments (no delete) |
-| `readonly` | `production-role.yaml` | production | Read-only (get, list) |
-| `cluster-admin` | `cluster-admin-rolebinding.yaml` | cluster-wide | Full admin |
-| `jenkins-platform-role` | `cluster-jenkins-role.yaml` | cluster-wide | Create/Update (no delete) |
+| Stage | What It Does |
+|-------|-------------|
+| Validate YAML | Lints all YAML files |
+| Policy Guardrails | Blocks destructive commands |
+| Ansible Config | Installs base system packages |
+| Terraform - Develop | Auto-provisions develop namespace |
+| 🔒 Approve Production | Manual approval gate |
+| Terraform - Production | Provisions production (after approval) |
+| Self-Service Requests | Creates namespaces from `requests/` |
+| Apply RBAC + NetPol | Applies security policies |
 
 ---
 
 ## Security
 
-- **Default-deny** network policies on all namespaces
-- **RBAC** with least-privilege access per environment
-- **Policy guardrails** block destructive commands in CI
-- **Manual approval** required before production infrastructure changes
-- **Resource quotas** prevent resource exhaustion
-- **No delete verbs** for Jenkins service account
+- **RBAC** — Least-privilege per environment (full in dev, read-only in prod)
+- **NetworkPolicy** — Default-deny, allow only intra-namespace traffic
+- **ResourceQuota** — Prevents resource exhaustion
+- **Policy Guardrails** — CI blocks destructive commands
+- **Approval Gate** — Production changes require manual approval
+- **Git Audit Trail** — Every change is a commit
+
+---
+
+## Project Structure
+
+```
+DevPlatform/
+├── terraform/
+│   ├── modules/namespace/    # Reusable: namespace + quota + limits
+│   ├── develop/main.tf
+│   └── production/main.tf
+├── rbac/                     # RBAC roles & bindings
+├── network-policies/         # Default-deny + allow-internal
+├── scripts/                  # Ansible, namespace provisioning, validation
+├── requests/                 # Self-service namespace requests
+├── Jenkinsfile               # CI pipeline
+└── README.md
+```
+
+---
+
+## Roadmap
+
+- [x] Multi-environment Terraform provisioning
+- [x] RBAC + NetworkPolicy + ResourceQuotas
+- [x] CI pipeline with guardrails & approval gates
+- [x] Self-service namespace requests via Git
+- [ ] Frontend portal for namespace creation & app health
+- [ ] Backend API (GitOps engine)
+- [ ] ArgoCD self-healing & drift detection
