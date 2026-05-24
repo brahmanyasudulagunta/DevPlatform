@@ -1,54 +1,57 @@
-# DevPlatform
+# Platform-Infrastructure
 
-A self-service infrastructure platform that provisions secure Kubernetes namespaces through Git — powered by Terraform, Jenkins, and GitOps.
+The core infrastructure provisioning and security baseline tier of the platform. This repository provisions secure, isolated Kubernetes environments, configures resource limits, and sets up strict security networks via a self-service GitOps approach.
 
 [![Jenkins](https://img.shields.io/badge/CI-Jenkins-D24939?style=for-the-badge&logo=jenkins&logoColor=white)](https://jenkins.io)
 [![Terraform](https://img.shields.io/badge/IaC-Terraform-7B42BC?style=for-the-badge&logo=terraform&logoColor=white)](https://terraform.io)
 [![Ansible](https://img.shields.io/badge/Config-Ansible-EE0000?style=for-the-badge&logo=ansible&logoColor=white)](https://ansible.com)
 [![Kubernetes](https://img.shields.io/badge/Runtime-Kubernetes-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white)](https://kubernetes.io)
-[![ArgoCD](https://img.shields.io/badge/GitOps-ArgoCD-EF7B4D?style=for-the-badge&logo=argo&logoColor=white)](https://argoproj.github.io/cd/)
 
 ---
 
-## How It Works
+## 3-Repo GitOps Architecture Role
+
+This repository serves as the **infrastructure foundation layer** in our decoupled, three-tier GitOps model:
+
+| Repository | Purpose | Primary Operator / Owner |
+| :--- | :--- | :--- |
+| **`Platform-Infrastructure`** (this) | Provisions namespaces, limits, RBAC, and network security policies. | Platform / DevOps Team |
+| **`Application-Code`** | Contains the FastAPI, React, and PostgreSQL application source code. | Software Development Team |
+| **`Gitops-Manifests`** | Stores environment-specific K8s manifests, watched by ArgoCD. | GitOps Deployment Engine |
+
+```
+Platform-Infrastructure creates namespaces  →  Gitops-Manifests deploys apps into them via ArgoCD
+```
+
+---
+
+## How It Works (Namespace Self-Service)
 
 ```
 Developer submits PR  →  Jenkins validates & applies  →  Namespace ready ✅
 (requests/team.yaml)     (Terraform + RBAC + NetPol)     (secure & isolated)
 ```
 
-Teams request a namespace by adding a YAML file and opening a PR. Jenkins runs Terraform to provision the namespace with **resource quotas, RBAC, and network policies** — automatically.
+Teams request an isolated environment by contributing a simple configuration file. Jenkins automatically processes the file and executes Terraform configurations to stand up the namespace.
 
 ---
 
-## Architecture (3-Repo GitOps)
+## Supported Environments
 
-| Repository | Purpose |
-|------------|---------|
-| **DevPlatform** (this) | Infrastructure — namespaces, RBAC, network policies |
-| [gitops](https://github.com/brahmanyasudulagunta/gitops) | App source code, Docker, CI |
-| [gitops-prod](https://github.com/brahmanyasudulagunta/gitops-prod) | K8s manifests, ArgoCD deployments |
+Each namespace is provisioned with a secure, standard profile tailored to the environment:
 
-```
-DevPlatform creates infra  →  gitops-prod deploys apps into it via ArgoCD
-```
+| Environment | CPU Limit | Memory Limit | Pod Limit | Developer Access |
+| :--- | :--- | :--- | :--- | :--- |
+| **develop** | 4 cores | 8Gi | 20 | Full CRUD (Read/Write) |
+| **production** | 8 cores | 16Gi | 30 | Read-Only |
 
----
-
-## Environments
-
-| Environment | CPU | Memory | Pods | Developer Access |
-|-------------|-----|--------|------|-----------------|
-| develop | 4 cores | 8Gi | 20 | Full CRUD |
-| production | 8 cores | 16Gi | 30 | Read-only |
-
-Each namespace automatically gets: ResourceQuota, LimitRange, RBAC, and NetworkPolicy.
+*Every namespace automatically gets an isolated ResourceQuota, a LimitRange to set container defaults, standard RBAC bindings, and a default-deny NetworkPolicy.*
 
 ---
 
-## Self-Service: Request a Namespace
+## Self-Service Namespace Request Workflow
 
-**1.** Add a request file:
+**1.** A development team adds their configuration file in the `requests/` directory:
 
 ```yaml
 # requests/my-team.yaml
@@ -60,60 +63,48 @@ spec:
   owner: my-team
 ```
 
-**2.** Open a PR → **3.** On merge, Jenkins provisions it via Terraform.
+**2.** Open a Pull Request.  
+**3.** Upon merge, Jenkins triggers the infrastructure pipeline to provision the namespace automatically.
 
 ---
 
-## CI Pipeline (Jenkinsfile)
+## CI/CD Platform Pipeline (Jenkinsfile)
 
-| Stage | What It Does |
-|-------|-------------|
-| Validate YAML | Lints all YAML files |
-| Policy Guardrails | Blocks destructive commands |
-| Ansible Config | Installs base system packages |
-| Terraform - Develop | Auto-provisions develop namespace |
-| 🔒 Approve Production | Manual approval gate |
-| Terraform - Production | Provisions production (after approval) |
-| Self-Service Requests | Creates namespaces from `requests/` |
-| Apply RBAC + NetPol | Applies security policies |
+The automated Jenkins pipeline coordinates infrastructure updates and applies guardrails:
+
+| Stage | Action |
+| :--- | :--- |
+| **Validate YAML** | Lints all YAML requests to guarantee structural compliance. |
+| **Policy Guardrails** | Scans code to block destructive actions (e.g., manual deletions). |
+| **Ansible Config** | Standardizes and configures the base target system packages. |
+| **Terraform - Develop** | Auto-provisions and updates development namespaces. |
+| **🔒 Approve Production** | Holds the pipeline for manual senior engineering sign-off. |
+| **Terraform - Production**| Auto-provisions the production namespace once approved. |
+| **Self-Service Requests** | Scans and creates newly requested team spaces dynamically. |
+| **Apply RBAC + NetPol** | Hardens and isolates namespaces with RBAC roles and NetworkPolicies. |
 
 ---
 
-## Security
+## Security & Reliability Design
 
-- **RBAC** — Least-privilege per environment (full in dev, read-only in prod)
-- **NetworkPolicy** — Default-deny, allow only intra-namespace traffic
-- **ResourceQuota** — Prevents resource exhaustion
-- **Policy Guardrails** — CI blocks destructive commands
-- **Approval Gate** — Production changes require manual approval
-- **Git Audit Trail** — Every change is a commit
+* **Zero Trust Network Isolation:** Default-deny policy rejects all ingress traffic from external namespaces, allowing only explicitly verified internal pods to communicate.
+* **Resource Guardrails:** Hard resource quotas block cluster-wide resource exhaustion from runaway pods.
+* **Strict Audit Trail:** Every single infrastructure creation, modification, or removal is registered as a Git commit history.
 
 ---
 
 ## Project Structure
 
 ```
-DevPlatform/
+Platform-Infrastructure/
 ├── terraform/
 │   ├── modules/namespace/    # Reusable: namespace + quota + limits
-│   ├── develop/main.tf
-│   └── production/main.tf
-├── rbac/                     # RBAC roles & bindings
-├── network-policies/         # Default-deny + allow-internal
-├── scripts/                  # Ansible, namespace provisioning, validation
-├── requests/                 # Self-service namespace requests
-├── Jenkinsfile               # CI pipeline
+│   ├── develop/main.tf       # Develop cluster specifications
+│   └── production/main.tf    # Production cluster specifications
+├── rbac/                     # RBAC roles & bindings (dev vs. prod)
+├── network-policies/         # Default-deny + allow-internal network settings
+├── scripts/                  # Ansible playbooks & self-service processing
+├── requests/                 # Active namespace allocation requests
+├── Jenkinsfile               # The platform CI orchestrator
 └── README.md
 ```
-
----
-
-## Roadmap
-
-- [x] Multi-environment Terraform provisioning
-- [x] RBAC + NetworkPolicy + ResourceQuotas
-- [x] CI pipeline with guardrails & approval gates
-- [x] Self-service namespace requests via Git
-- [ ] Frontend portal for namespace creation & app health
-- [ ] Backend API (GitOps engine)
-- [ ] ArgoCD self-healing & drift detection
